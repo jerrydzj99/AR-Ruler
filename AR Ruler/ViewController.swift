@@ -16,6 +16,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     
     var dotNodes = [SCNNode]()
     var textNode = SCNNode()
+    var boxNode = SCNNode()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -49,6 +50,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                 dot.removeFromParentNode()
             }
             dotNodes = [SCNNode]()
+            boxNode.removeFromParentNode()
         }
         
         if let touchLocation = touches.first?.location(in: sceneView) {
@@ -61,6 +63,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     }
     
     func addDot(at hitResult: ARHitTestResult) {
+        
         let dotGeometry = SCNSphere(radius: 0.005)
         let dotMaterial = SCNMaterial()
         dotMaterial.diffuse.contents = UIColor.red
@@ -73,12 +76,30 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         )
         sceneView.scene.rootNode.addChildNode(dotNode)
         dotNodes.append(dotNode)
+        
         if dotNodes.count >= 2 {
-            calculate()
+            let distance = calculate()
+            addLine(startNode: dotNodes[0], endNode: dotNodes[1], distance: distance)
         }
+        
     }
     
-    func calculate() {
+    func addLine(startNode: SCNNode, endNode: SCNNode, distance: Float) {
+        
+        let boxGeometry = SCNBox(width: 0.0025, height: 0.0025, length: CGFloat(distance), chamferRadius: 0)
+        boxGeometry.firstMaterial?.diffuse.contents = UIColor.orange
+        boxNode = SCNNode(geometry: boxGeometry)
+        boxNode.position = SCNVector3(
+            x: (startNode.position.x + endNode.position.x) / 2,
+            y: (startNode.position.y + endNode.position.y) / 2,
+            z: (startNode.position.z + endNode.position.z) / 2
+        )
+        boxNode.look(at: endNode.position)
+        sceneView.scene.rootNode.addChildNode(boxNode)
+        
+    }
+    
+    func calculate() -> Float {
         
         let startNode = dotNodes[0]
         let endNode = dotNodes[1]
@@ -90,6 +111,8 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         )
         
         updateText(withText: "\(distance)", atPosition: endNode.position)
+        
+        return distance
         
     }
     
